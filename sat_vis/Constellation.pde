@@ -23,11 +23,11 @@ public class Constellation {
   public void drawSats() {
     for (Map.Entry satH : sats.entrySet()) {
       Sat sat = (Sat) satH.getValue();
-      popMatrix();
+      pushMatrix();
       translate(0, 0, sat.z);
       float size = 0.0003 * sat.z;
       circle(sat.x, sat.y, size);
-      pushMatrix();
+      popMatrix();
     }
   }
 }
