@@ -7,9 +7,9 @@ OscP5 oscP5;
 ArrayList<Constellation> constellations;
 
 void setup() {
-  oscP5 = new OscP5(this, 7878);
+  oscP5 = new OscP5(this, 7400);
 
-  size(800, 800, P3D);
+  size(50, 50, P3D);
   noStroke();
 
   constellations = new ArrayList<Constellation>();
@@ -35,24 +35,22 @@ void draw() {
   }
 }
 
-void oscEvent(OscMessage message) {
-  if (message.checkAddrPattern("/satXYZV")) {
-    String consName = message.get(0).toString();
-    float x = message.get(1).floatValue();
-    float y = message.get(1).floatValue();
-    float z = message.get(1).floatValue();
-    float v = message.get(1).floatValue();
+void oscEvent(OscMessage theOscMessage) {
+  if (theOscMessage.checkAddrPattern("/satXYZV")) {
+    String consName = theOscMessage.get(0).toString();
+    float x = theOscMessage.get(1).floatValue();
+    float y = theOscMessage.get(2).floatValue();
+    float z = theOscMessage.get(3).floatValue();
+    float v = theOscMessage.get(4).floatValue();
 
     constellations.get(0).updateSat("s1", x, y, z, v);
-  } else if (message.checkAddrPattern("/obsXYZ")) {
-    float x = message.get(1).floatValue();
-    float y = message.get(1).floatValue();
-    float z = message.get(1).floatValue();
+  } else if (theOscMessage.checkAddrPattern("/obsXYZ")) {
+    float x = theOscMessage.get(0).floatValue();
+    float y = theOscMessage.get(1).floatValue();
+    float z = theOscMessage.get(2).floatValue();
 
     camera(x, y, z, // eye
       x, y + 1, 0, // centers
       0.0, 0.0, 1.0); // ups
-
-    print("camera set to" + x + " " + y + " " + z);
   }
 }
