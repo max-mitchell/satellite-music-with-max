@@ -7,9 +7,10 @@ OscP5 oscP5;
 ArrayList<Constellation> constellations;
 
 void setup() {
+  frameRate(20);
   oscP5 = new OscP5(this, 7400);
 
-  size(50, 50, P3D);
+  size(800, 800, P3D);
   noStroke();
 
   constellations = new ArrayList<Constellation>();
@@ -20,19 +21,25 @@ void setup() {
   c1.addSat("s1");
 
   constellations.add(c1);
-
-  camera(649.73, -4755.5, 4186.92, // eye
-    650, -4756, 4188, // centers
-    0.0, 1.0, 0.0); // ups
+  
+  float fov = PI/3;
+  float cameraZ = (height/2.0) / tan(fov/2.0);
+  perspective(fov, float(width)/float(height), 
+            cameraZ/10.0, cameraZ*100.0);
 }
 
 void draw() {
-  lights();
-  background(0);
+  //lights();
+  //background(0);
 
   for (int i = 0; i < constellations.size(); i++) {
     constellations.get(i).drawSats();
   }
+
+  pushMatrix();
+  translate(700, 700, -6298);
+  box(100);
+  popMatrix();
 }
 
 void oscEvent(OscMessage theOscMessage) {
@@ -50,7 +57,7 @@ void oscEvent(OscMessage theOscMessage) {
     float z = theOscMessage.get(2).floatValue();
 
     camera(x, y, z, // eye
-      x, y + 1, 0, // centers
+      0, 0, 0, // centers
       0.0, 0.0, 1.0); // ups
   }
 }

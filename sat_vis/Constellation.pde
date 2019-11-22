@@ -31,7 +31,7 @@ public class Constellation {
       pushMatrix();
       fill(fill);
       translate(0, 0, sat.z);
-      float size = 0.0003 * sat.z;
+      float size = 200;
       ellipse(sat.x, sat.y, size, size);
       popMatrix();
     }
