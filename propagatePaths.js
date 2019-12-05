@@ -106,7 +106,10 @@ maxApi.addHandler("getObserver", (lat, lon, timeSinceStart) => {
 maxApi.addHandler("getPosData", (timeSinceStart) => {
     var toSend = {};
     for (key in activeSats) {
-        var gSend = [];
+        var x = [];
+        var y = [];
+        var z = [];
+        var v = [];
         var tles = activeSats[key];
         for (var i in tles) {
             var satrec = satellite.twoline2satrec(tles[i][0], tles[i][1]);
@@ -117,9 +120,12 @@ maxApi.addHandler("getPosData", (timeSinceStart) => {
                 Math.pow(velocityEci.y, 2) +
                 Math.pow(velocityEci.z, 2));
 
-            gSend.push({ 'x': positionEci.x, 'y': positionEci.y, 'z': positionEci.z, 'v': velMagnitude });
+            x.push(positionEci.x);
+            y.push(positionEci.y);
+            z.push(positionEci.z);
+            v.push(velMagnitude);
         }
-        toSend[key] = gSend;
+        toSend[key] = {'x':x, 'y':y, 'z':z, 'v':v};
     }
 
     maxApi.outlet("GD", toSend);
