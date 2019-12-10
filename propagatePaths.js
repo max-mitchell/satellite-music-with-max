@@ -20,7 +20,7 @@ satGroups["chandra"] = [25867];
 satGroups["hubble"] = [20580];
 satGroups["veryfar"] = [33401, 43435, 37755];
 satGroups["spy"] = [28888, 37348, 39232, 43941];
-satGroups["eccentiric"] = [41032, 42719, 41896, 22049, 27540, 37212, 37398, 38995,
+satGroups["eccentric"] = [41032, 42719, 41896, 22049, 27540, 37212, 37398, 38995,
     40296, 40482, 40483, 40484, 40485, 26463, 26410, 26411];
 satGroups["goes"] = [29155, 35491, 36411, 41866, 43226];
 satGroups["glonass"] = [37372, 40315, 29672, 29670, 29671, 32276, 32275,
@@ -44,7 +44,7 @@ satellites["chandra"] = [];
 satellites["hubble"] = [];
 satellites["veryfar"] = [];
 satellites["spy"] = [];
-satellites["eccentiric"] = [];
+satellites["eccentric"] = [];
 satellites["goes"] = [];
 satellites["glonass"] = [];
 satellites["galileo"] = [];
