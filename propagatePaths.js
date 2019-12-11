@@ -3,6 +3,9 @@ var maxApi = require('max-api');
 var request = require('request');
 var fs = require('fs');
 
+var majorScale = [0, 2, 4, 5, 7, 9, 11, 12];
+var pi2 = Math.PI * 2;
+
 var tleLine1 = '', tleLine2 = '';
 var satrec = '';
 var observerGd = '';
@@ -89,46 +92,107 @@ maxApi.addHandler("toggleGroup", (groupName) => {
         activeSats[groupName] = [...satellites[groupName]];
     }
     maxApi.outlet("DATA", activeSats);
+    maxApi.outlet("VIS", "/toggle", groupName, satGroups[groupName].length);
 });
 
-maxApi.addHandler("getObserver", (lat, lon, timeSinceStart) => {
-    var timeInDays = timeSinceStart / 1440.0;
-    var gmst = satellite.gstime(julianDay + timeInDays);
+maxApi.addHandler("setObserver", (lat, lon, timeSinceStart) => {
     observerGd = {
         latitude: satellite.degreesToRadians(lat),
         longitude: satellite.degreesToRadians(lon),
         height: 0.0
     };
-    observerEci = satellite.ecfToEci(satellite.geodeticToEcf(observerGd), gmst);
-    maxApi.outlet("OD", "/obsXYZ", observerEci.x, observerEci.y, observerEci.z);
 });
 
 maxApi.addHandler("getPosData", (timeSinceStart) => {
-    var toSend = {};
+    var timeInDays = timeSinceStart / 1440.0;
+    var gmst = satellite.gstime(julianDay + timeInDays);
+    observerEci = satellite.ecfToEci(satellite.geodeticToEcf(observerGd), gmst);
+    maxApi.outlet("VIS", "/obs", observerEci.x, observerEci.y, observerEci.z);
+
+    var outputForMax = {};
+    var satNum, satOffset;
+    var satNumMax = 15;
     for (key in activeSats) {
-        var x = [];
-        var y = [];
-        var z = [];
-        var v = [];
+        //var x = [];
+        //var y = [];
+        //var z = [];
+        //var v = [];
+        var eachSat = [];
+
+        var totElevation = 0;
+        var totAzimuth = 0;
+        var totVelocity = 0;
+        var satCount = 0;
+
+        var xyzStrings = "";
+
+        satNum = 0;
+        satOffset = 0
         var tles = activeSats[key];
         for (var i in tles) {
             var satrec = satellite.twoline2satrec(tles[i][0], tles[i][1]);
             var positionAndVelocity = satellite.sgp4(satrec, timeSinceStart);
-            var positionEci = positionAndVelocity.position,
-                velocityEci = positionAndVelocity.velocity;
+            var positionEci = positionAndVelocity.position;
+            velocityEci = positionAndVelocity.velocity;
             var velMagnitude = Math.sqrt(Math.pow(velocityEci.x, 2) +
                 Math.pow(velocityEci.y, 2) +
                 Math.pow(velocityEci.z, 2));
 
-            x.push(positionEci.x);
-            y.push(positionEci.y);
-            z.push(positionEci.z);
-            v.push(velMagnitude);
-        }
-        toSend[key] = {'x':x, 'y':y, 'z':z, 'v':v};
-    }
+            //x.push(positionEci.x);
+            //y.push(positionEci.y);
+            //z.push(positionEci.z);
+            //v.push(velMagnitude);
 
-    maxApi.outlet("GD", toSend);
+            var lookAngles = satellite.ecfToLookAngles(observerGd, satellite.eciToEcf(positionEci, gmst));
+            //eachSat.push(lookAngles.rangeSat);
+
+            //var noteVelocity = 0;
+            if (lookAngles.elevation > Math.PI * 0.1) {
+                //noteVelocity = Math.floor((lookAngles.azimuth / pi2) * 500);
+                totElevation += lookAngles.elevation;
+                totAzimuth += lookAngles.azimuth;
+                totVelocity += velMagnitude;
+                satCount += 1;
+            }
+            //eachSat.push(noteVelocity);
+
+            //var notePitch = majorScale[Math.floor(Math.random() * 12)] + 
+            //    Math.floor((velMagnitude / 10) * 50);
+            //eachSat.push(notePitch);
+
+            
+
+
+            //if (lookAngles.elevation > 0) {
+            xyzStrings += positionEci.x + "|" + positionEci.y + "|" + positionEci.z + "|" + lookAngles.rangeSat + "#";
+
+            satNum += 1;
+
+            if (satNum >= satNumMax) {
+                satOffset += satNumMax;
+                maxApi.outlet("VIS", "/vis", key, satOffset, satNum, xyzStrings);
+                xyzStrings = "";
+                satNum = 0;
+            }
+            //}
+        }
+        maxApi.outlet("VIS", "/vis", key, satOffset, satNum, xyzStrings);
+        //vis[key] = { 'x': x, 'y': y, 'z': z }; //, 'v': v };
+        var noteVelocity = ((totElevation / satCount) / Math.PI) * 300;
+        if (noteVelocity > 100) {
+            noteVelocity = 100;
+        }
+        var notePitch = majorScale[Math.floor(Math.random() * 8)] + 
+            Math.floor((totVelocity / satCount) / 10 * 100);
+        var noteDuration = Math.floor(((totAzimuth / satCount) / pi2) * 500);
+        outputForMax[key] = [notePitch, noteVelocity, noteDuration];
+    }
+    maxApi.outlet("GD", outputForMax);
+   // maxApi.outlet("VIS", "/visXYZ", vis);
 });
+
+getDistance = function (v1, v2) {
+    return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2 + (v1.z - v2.z) ** 2);
+}
 
 

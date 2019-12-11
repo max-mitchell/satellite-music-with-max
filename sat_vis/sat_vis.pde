@@ -2,62 +2,96 @@ import netP5.*;
 import oscP5.*;
 
 import java.util.Map;
+import java.util.concurrent.*;
 
 OscP5 oscP5;
-ArrayList<Constellation> constellations;
+ConcurrentHashMap<String, Constellation> constellations;
+
+float X, Y, Z;
 
 void setup() {
   frameRate(20);
   oscP5 = new OscP5(this, 7400);
+  oscP5.plug(this, "setObserver", "/obs");
+  oscP5.plug(this, "setGroup", "/vis");
+  oscP5.plug(this, "toggleGroup", "/toggle");
 
-  size(800, 800, P3D);
+  size(900, 900, P3D);
   noStroke();
 
-  constellations = new ArrayList<Constellation>();
+  constellations = new ConcurrentHashMap<String, Constellation>();
 
-  Constellation c1 = new Constellation("c1", color(255, 0, 0));
-  Constellation c2 = new Constellation("c2", color(0, 255, 0));
-
-  c1.addSat("s1");
-
-  constellations.add(c1);
+  float fov = PI * .8;
+  perspective(fov, 1, 1000, 500000.0);
   
-  float fov = PI/3;
-  float cameraZ = (height/2.0) / tan(fov/2.0);
-  perspective(fov, float(width)/float(height), 
-            cameraZ/10.0, cameraZ*100.0);
+  //ortho(-50000, 50000, -50000, 50000, 100, 100000);
 }
 
 void draw() {
   //lights();
-  //background(0);
+  background(0);
 
-  for (int i = 0; i < constellations.size(); i++) {
-    constellations.get(i).drawSats();
+  for (String name : constellations.keySet()) {
+    constellations.get(name).drawSats();
   }
+/*
+  pushMatrix();
+  translate(2 * X, 2 * Y, 2 * Z);
+  fill(255);
+  box(250);
+  popMatrix();
 
   pushMatrix();
-  translate(700, 700, -6298);
-  box(100);
+  translate(2 * X + 500, 2 * Y, 2 * Z);
+  fill(0, 255, 0);
+  box(250);
   popMatrix();
+
+  pushMatrix();
+  translate(2 * X - 500, 2 * Y, 2 * Z);
+  fill(0, 150, 0);
+  box(250);
+  popMatrix();
+
+  pushMatrix();
+  translate(2 * X, 2 * Y + 500, 2 * Z);
+  fill(255, 0, 0);
+  box(250);
+  popMatrix();
+
+  pushMatrix();
+  translate(2 * X, 2 * Y - 500, 2 * Z);
+  fill(150, 0, 0);
+  box(250);
+  popMatrix();
+  */
 }
 
-void oscEvent(OscMessage theOscMessage) {
-  if (theOscMessage.checkAddrPattern("/satXYZV")) {
-    String consName = theOscMessage.get(0).toString();
-    float x = theOscMessage.get(1).floatValue();
-    float y = theOscMessage.get(2).floatValue();
-    float z = theOscMessage.get(3).floatValue();
-    float v = theOscMessage.get(4).floatValue();
+void setObserver(float x, float y, float z) {
+  camera(x, y, z, // eye
+    2*x, 2*y, 2*z, // centers
+    0.0, 0.0, 1.0); // ups
+  X = x;
+  Y = y;
+  Z = z;
+}
 
-    constellations.get(0).updateSat("s1", x, y, z, v);
-  } else if (theOscMessage.checkAddrPattern("/obsXYZ")) {
-    float x = theOscMessage.get(0).floatValue();
-    float y = theOscMessage.get(1).floatValue();
-    float z = theOscMessage.get(2).floatValue();
+void setGroup(String name, int offset, int count, String posList) {
+  String[] sats = split(posList, '#');
+  for (int i = 0; i < count; i++) {
+    String[] tmp = split(sats[i], '|');
+    float x = float(tmp[0]);
+    float y = float(tmp[1]);
+    float z = float(tmp[2]);
+    float d = float(tmp[3]);
+    constellations.get(name).updateSat(i + offset, x, y, z, d);
+  }
+}
 
-    camera(x, y, z, // eye
-      0, 0, 0, // centers
-      0.0, 0.0, 1.0); // ups
+void toggleGroup(String name, int count) {
+  if (constellations.containsKey(name)) {
+    constellations.remove(name);
+  } else {
+    constellations.put(name, new Constellation(count, color(random(255), random(255), random(255))));
   }
 }
