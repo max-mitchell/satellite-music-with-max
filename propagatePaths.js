@@ -1,6 +1,5 @@
 var satellite = require('satellite.js');
 var maxApi = require('max-api');
-var request = require('request');
 var fs = require('fs');
 
 // Sets up scale for random notes
